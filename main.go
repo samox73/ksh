@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -14,15 +15,47 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const listHeight = 14
+const listHeight = 10
+
+const namespaceBanner = `
+███╗   ██╗ █████╗ ███╗   ███╗███████╗███████╗██████╗  █████╗  ██████╗███████╗
+████╗  ██║██╔══██╗████╗ ████║██╔════╝██╔════╝██╔══██╗██╔══██╗██╔════╝██╔════╝
+██╔██╗ ██║███████║██╔████╔██║█████╗  ███████╗██████╔╝███████║██║     █████╗  
+██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══╝  ╚════██║██╔═══╝ ██╔══██║██║     ██╔══╝  
+██║ ╚████║██║  ██║██║ ╚═╝ ██║███████╗███████║██║     ██║  ██║╚██████╗███████╗
+╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝╚══════╝`
+
+const podBanner = `
+██████╗  ██████╗ ██████╗ 
+██╔══██╗██╔═══██╗██╔══██╗
+██████╔╝██║   ██║██║  ██║
+██╔═══╝ ██║   ██║██║  ██║
+██║     ╚██████╔╝██████╔╝
+╚═╝      ╚═════╝ ╚═════╝`
 
 var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+	titleStyle           = lipgloss.NewStyle().MarginLeft(2)
+	itemStyle            = lipgloss.NewStyle().PaddingLeft(4)
+	selectedItemStyle    = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("#ff895e"))
+	paginationStyle      = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
+	helpStyle            = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
+	quitTextStyle        = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+	LogoForegroundStyles = []lipgloss.Style{
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#ff5f00")).Background(lipgloss.Color("#ff5f00")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#e65400")).Background(lipgloss.Color("#e65400")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#cc4b00")).Background(lipgloss.Color("#cc4b00")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#b34100")).Background(lipgloss.Color("#b34100")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("#993800")).Background(lipgloss.Color("#993800")),
+		lipgloss.NewStyle(),
+	}
+	LogoBackgroundStyles = []lipgloss.Style{
+		lipgloss.NewStyle().Foreground(lipgloss.Color("255")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("252")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("249")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("246")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("243")),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")),
+	}
 )
 
 type item string
@@ -48,12 +81,38 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(string(i)))
 }
 
+func getBanner(banner string) string {
+	trimmedBanner := strings.TrimSpace(banner)
+	var finalBanner strings.Builder
+
+	for i, s := range strings.Split(trimmedBanner, "\n") {
+		if i > 0 {
+			finalBanner.WriteRune('\n')
+		}
+
+		foreground := LogoForegroundStyles[i]
+		background := LogoBackgroundStyles[i]
+
+		for _, c := range s {
+			if c == '█' {
+				finalBanner.WriteString(foreground.Render("█"))
+			} else if c != ' ' {
+				finalBanner.WriteString(background.Render(string(c)))
+			} else {
+				finalBanner.WriteRune(c)
+			}
+		}
+	}
+	return finalBanner.String()
+}
+
 type model struct {
 	items              list.Model
 	namespace          string
 	pod                string
 	clientset          kubernetes.Clientset
 	selectingNamespace bool
+	banner             string
 }
 
 func (m model) Init() tea.Cmd {
@@ -64,6 +123,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.items.SetWidth(msg.Width)
+		m.items.SetHeight(msg.Height - lipgloss.Height(m.banner) - 1)
 		return m, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -73,6 +133,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i, ok := m.items.SelectedItem().(item)
 			if ok {
 				if m.selectingNamespace {
+					m.banner = getBanner(podBanner)
 					m.namespace = string(i)
 					m.items = buildPodList(m.namespace, m.clientset)
 					m.selectingNamespace = false
@@ -90,11 +151,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func buildPodList(namespace string, clientset kubernetes.Clientset) list.Model {
-	const defaultWidth = 20
-	l := list.New(buildPodItems(namespace, clientset), itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "Select the pod:"
+func getList(items []list.Item) list.Model {
+	length := minInt(len(items)+7, 20)
+	l := list.New(items, itemDelegate{}, 60, length)
 	l.SetShowStatusBar(false)
+	l.SetShowTitle(false)
 	l.SetFilteringEnabled(true)
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
@@ -102,25 +163,28 @@ func buildPodList(namespace string, clientset kubernetes.Clientset) list.Model {
 	return l
 }
 
+func buildPodList(namespace string, clientset kubernetes.Clientset) list.Model {
+	items := buildPodItems(namespace, clientset)
+	return getList(items)
+}
+
 func buildNamespaceModel() *model {
-	const defaultWidth = 20
 	clientset := *getKubernetesClientset()
 	items := buildNamespaceItems(clientset)
-	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "Select the namespace:"
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
-	l.Styles.Title = titleStyle
-	l.Styles.PaginationStyle = paginationStyle
-	l.Styles.HelpStyle = helpStyle
-	return &model{items: l, clientset: clientset, selectingNamespace: true}
+	return &model{items: getList(items), clientset: clientset, selectingNamespace: true, banner: getBanner(namespaceBanner)}
 }
 
 func (m *model) View() string {
+	banner := lipgloss.NewStyle().Margin(2, 0, 0, 2).Render(m.banner)
 	if m.pod != "" && m.namespace != "" {
 		return quitTextStyle.Render(fmt.Sprintf("Opening a shell into %s/%s", m.namespace, m.pod))
 	}
-	return "\n" + m.items.View()
+	items := m.items.View()
+	return lipgloss.JoinVertical(lipgloss.Left, banner, items)
+}
+
+func minInt(a, b int) int {
+	return int(math.Min(float64(a), float64(b)))
 }
 
 func buildNamespaceItems(clientset kubernetes.Clientset) []list.Item {

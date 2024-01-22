@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
@@ -43,7 +42,6 @@ func getKubernetesClientset() *kubernetes.Clientset {
 
 func openShell(clientset *kubernetes.Clientset, namespace, pod string) {
 	for _, cmd := range [][]string{{"bash"}, {"ash"}, {"sh"}} {
-		log.Default().Printf("trying to execute %s on %s/%s\n", cmd[0], namespace, pod)
 		if err := openSpecificShell(clientset, namespace, pod, cmd); err != nil {
 			fmt.Printf("Error opening shell: %v\n", err)
 		} else {
