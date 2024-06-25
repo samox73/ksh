@@ -56,8 +56,9 @@ func (m *namespacesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *namespacesModel) View() string {
 	banner := lipgloss.NewStyle().Margin(2, 0, 0, 2).Render(m.banner)
+	context := utils.ViewContext()
 	items := m.items.View()
-	return lipgloss.JoinVertical(lipgloss.Left, banner, items)
+	return lipgloss.JoinVertical(lipgloss.Left, banner, context, items)
 }
 
 func BuildNamespaceModel() *namespacesModel {

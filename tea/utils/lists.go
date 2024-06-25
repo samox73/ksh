@@ -12,7 +12,7 @@ import (
 )
 
 func getList(items []list.Item) list.Model {
-	length := minInt(len(items)+7, 20)
+	length := MinInt(len(items)+7, 20)
 	l := list.New(items, components.ItemDelegate{}, 60, length)
 	l.SetShowStatusBar(false)
 	l.SetShowTitle(false)

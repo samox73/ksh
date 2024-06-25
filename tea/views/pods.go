@@ -24,7 +24,6 @@ const banner = `
 
 type PodsModel struct {
 	items     list.Model
-	labels    map[string]string
 	namespace string
 	pod       string
 	clientset kubernetes.Clientset
@@ -44,7 +43,7 @@ func (m PodsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.items.SetWidth(msg.Width)
-		m.items.SetHeight(msg.Height - lipgloss.Height(banner) - len(i.Labels))
+		m.items.SetHeight(utils.MinInt(msg.Height - lipgloss.Height(banner) - len(i.Labels), len(m.items.Items())))
 		return m, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
@@ -64,11 +63,13 @@ func (m PodsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+
 func (m *PodsModel) viewLabels() string {
 	i, ok := m.items.SelectedItem().(components.Item)
 	if !ok {
 		return ""
 	}
+
 	l := ""
 	keys := make([]string, 0, len(i.Labels))
 	longestKeyLength := 0
@@ -90,9 +91,10 @@ func (m *PodsModel) viewLabels() string {
 
 func (m PodsModel) View() string {
 	banner := lipgloss.NewStyle().Margin(2, 0, 0, 2).Render(styles.GetBanner(banner))
+	context := utils.ViewContext()
 	labels := m.viewLabels()
 	items := m.items.View()
-	return lipgloss.JoinVertical(lipgloss.Left, banner, labels, items)
+	return lipgloss.JoinVertical(lipgloss.Left, banner, context, labels, items)
 }
 
 func buildPodModel(namespace string, parent tea.Model) *PodsModel {
