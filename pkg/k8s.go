@@ -1,4 +1,4 @@
-package main
+package pkg
 
 import (
 	"context"
@@ -21,7 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func getKubernetesClientset() *kubernetes.Clientset {
+var clientset *kubernetes.Clientset
+
+func GetKubernetesClientset() *kubernetes.Clientset {
+	if clientset != nil {
+		return clientset
+	}
 	// Set up kubeconfig
 	home := homedir.HomeDir()
 	kubeconfig := flag.String("kubeconfig", fmt.Sprintf("%s/.kube/config", home), "path to the kubeconfig file")
@@ -32,15 +37,16 @@ func getKubernetesClientset() *kubernetes.Clientset {
 	}
 
 	// Create Kubernetes client
-	clientset, err := kubernetes.NewForConfig(config)
+	c, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		fmt.Printf("Error creating Kubernetes client: %v\n", err)
 		os.Exit(1)
 	}
-	return clientset
+	clientset = c
+	return c
 }
 
-func openShell(clientset *kubernetes.Clientset, namespace, pod string) {
+func OpenShell(clientset *kubernetes.Clientset, namespace, pod string) {
 	for _, cmd := range [][]string{{"bash"}, {"ash"}, {"sh"}} {
 		if err := openSpecificShell(clientset, namespace, pod, cmd); err != nil {
 			fmt.Printf("Error opening shell: %v\n", err)
@@ -50,7 +56,7 @@ func openShell(clientset *kubernetes.Clientset, namespace, pod string) {
 	}
 }
 
-func getPods(clientset kubernetes.Clientset, namespace string) *corev1.PodList {
+func GetPods(clientset kubernetes.Clientset, namespace string) *corev1.PodList {
 	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error listing pods: %v\n", err)
@@ -59,7 +65,7 @@ func getPods(clientset kubernetes.Clientset, namespace string) *corev1.PodList {
 	return pods
 }
 
-func getNamespaces(clientset kubernetes.Clientset) *corev1.NamespaceList {
+func GetNamespaces(clientset kubernetes.Clientset) *corev1.NamespaceList {
 	namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error listing pods: %v\n", err)
