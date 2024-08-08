@@ -3,11 +3,11 @@ package components
 import (
 	"fmt"
 	"io"
-	"ksh/tea/styles"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/samox73/ksh/tea/styles"
 )
 
 type Item struct {

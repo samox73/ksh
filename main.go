@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"ksh/pkg"
-	"ksh/tea/views"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/samox73/ksh/pkg"
+	"github.com/samox73/ksh/tea/views"
 )
 
 func main() {

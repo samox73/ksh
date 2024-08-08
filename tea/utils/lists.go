@@ -1,13 +1,13 @@
 package utils
 
 import (
-	"ksh/pkg"
-	"ksh/tea/components"
-	"ksh/tea/styles"
 	"log"
 	"sort"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/samox73/ksh/pkg"
+	"github.com/samox73/ksh/tea/components"
+	"github.com/samox73/ksh/tea/styles"
 	"k8s.io/client-go/kubernetes"
 )
 

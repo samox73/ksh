@@ -1,14 +1,13 @@
 package views
 
 import (
-	"ksh/pkg"
-	"ksh/tea/components"
-	"ksh/tea/styles"
-	"ksh/tea/utils"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/samox73/ksh/pkg"
+	"github.com/samox73/ksh/tea/components"
+	"github.com/samox73/ksh/tea/styles"
+	"github.com/samox73/ksh/tea/utils"
 	"k8s.io/client-go/kubernetes"
 )
 
