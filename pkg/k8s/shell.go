@@ -1,4 +1,4 @@
-package pkg
+package k8s
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,10 +18,6 @@ import (
 	"k8s.io/kubectl/pkg/cmd/exec"
 	"k8s.io/kubectl/pkg/cmd/util/podcmd"
 	"k8s.io/kubectl/pkg/scheme"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var clientset *kubernetes.Clientset
@@ -46,9 +45,9 @@ func GetKubernetesClientset() *kubernetes.Clientset {
 	return c
 }
 
-func OpenShell(clientset *kubernetes.Clientset, namespace, pod string) {
+func OpenShell(clientset *kubernetes.Clientset, namespace, pod string, container string) {
 	for _, cmd := range [][]string{{"bash"}, {"ash"}, {"sh"}} {
-		if err := openSpecificShell(clientset, namespace, pod, cmd); err != nil {
+		if err := openSpecificShell(clientset, namespace, pod, container, cmd); err != nil {
 			fmt.Printf("Error opening shell: %v\n", err)
 		} else {
 			return
@@ -56,25 +55,7 @@ func OpenShell(clientset *kubernetes.Clientset, namespace, pod string) {
 	}
 }
 
-func GetPods(clientset kubernetes.Clientset, namespace string) *corev1.PodList {
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		fmt.Printf("Error listing pods: %v\n", err)
-		os.Exit(1)
-	}
-	return pods
-}
-
-func GetNamespaces(clientset kubernetes.Clientset) *corev1.NamespaceList {
-	namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		fmt.Printf("Error listing pods: %v\n", err)
-		os.Exit(1)
-	}
-	return namespaces
-}
-
-func openSpecificShell(clientset *kubernetes.Clientset, namespace, podName string, command []string) error {
+func openSpecificShell(clientset *kubernetes.Clientset, namespace, podName string, container string, command []string) error {
 	// the following is mostly stolen from https://github.com/kubernetes/kubectl/blob/master/pkg/cmd/exec/exec.go#L305
 	config := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
 		clientcmd.NewDefaultClientConfigLoadingRules(),
@@ -110,13 +91,15 @@ func openSpecificShell(clientset *kubernetes.Clientset, namespace, podName strin
 		return fmt.Errorf("cannot exec into a container in a completed pod; current phase is %s", pod.Status.Phase)
 	}
 
-	containerName := p.ContainerName
-	if len(containerName) == 0 {
-		container, err := podcmd.FindOrDefaultContainerByName(pod, containerName, p.Quiet, p.ErrOut)
+	if container == "" {
+		container = p.ContainerName
+	}
+	if len(container) == 0 {
+		c, err := podcmd.FindOrDefaultContainerByName(pod, container, p.Quiet, p.ErrOut)
 		if err != nil {
 			return err
 		}
-		containerName = container.Name
+		container = c.Name
 	}
 	t := p.SetupTTY()
 	var sizeQueue remotecommand.TerminalSizeQueue
@@ -136,7 +119,7 @@ func openSpecificShell(clientset *kubernetes.Clientset, namespace, podName strin
 			Namespace(namespace).
 			SubResource("exec").
 			VersionedParams(&corev1.PodExecOptions{
-				Container: containerName,
+				Container: container,
 				Command:   command,
 				Stdin:     p.Stdin,
 				Stdout:    p.Out != nil,

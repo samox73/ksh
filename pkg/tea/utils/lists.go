@@ -4,8 +4,8 @@ import (
 	"sort"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/samox73/ksh/tea/components"
-	"github.com/samox73/ksh/tea/styles"
+	"github.com/samox73/ksh/pkg/tea/components"
+	"github.com/samox73/ksh/pkg/tea/styles"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -19,11 +19,6 @@ func listFromItems(items []list.Item) list.Model {
 	l.Styles.PaginationStyle = styles.PaginationStyle
 	l.Styles.HelpStyle = styles.HelpStyle
 	return l
-}
-
-func BuildPodList(pods []corev1.Pod) list.Model {
-	items := buildPodItems(pods)
-	return listFromItems(items)
 }
 
 func BuildNamespaceList(namespaces []corev1.Namespace) list.Model {
@@ -42,6 +37,11 @@ func buildNamespaceItems(namespaces []corev1.Namespace) []list.Item {
 	return out
 }
 
+func BuildPodList(pods []corev1.Pod) list.Model {
+	items := buildPodItems(pods)
+	return listFromItems(items)
+}
+
 func buildPodItems(pods []corev1.Pod) []list.Item {
 	sort.Slice(pods, func(i, j int) bool {
 		return pods[i].Name < pods[j].Name
@@ -49,6 +49,22 @@ func buildPodItems(pods []corev1.Pod) []list.Item {
 	out := make([]list.Item, len(pods))
 	for i, pod := range pods {
 		out[i] = components.Item{Name: pod.Name, Labels: pod.Labels}
+	}
+	return out
+}
+
+func BuildContainerList(pods []corev1.Container) list.Model {
+	items := buildContainerItems(pods)
+	return listFromItems(items)
+}
+
+func buildContainerItems(pods []corev1.Container) []list.Item {
+	sort.Slice(pods, func(i, j int) bool {
+		return pods[i].Name < pods[j].Name
+	})
+	out := make([]list.Item, len(pods))
+	for i, pod := range pods {
+		out[i] = components.Item{Name: pod.Name}
 	}
 	return out
 }

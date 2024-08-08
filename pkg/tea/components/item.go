@@ -7,7 +7,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/samox73/ksh/tea/styles"
+	"github.com/samox73/ksh/pkg/tea/styles"
 )
 
 type Item struct {

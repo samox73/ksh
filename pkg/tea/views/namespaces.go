@@ -4,10 +4,10 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/samox73/ksh/pkg"
-	"github.com/samox73/ksh/tea/components"
-	"github.com/samox73/ksh/tea/styles"
-	"github.com/samox73/ksh/tea/utils"
+	"github.com/samox73/ksh/pkg/k8s"
+	"github.com/samox73/ksh/pkg/tea/components"
+	"github.com/samox73/ksh/pkg/tea/styles"
+	"github.com/samox73/ksh/pkg/tea/utils"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -61,7 +61,7 @@ func (m *namespacesModel) View() string {
 }
 
 func BuildNamespaceModel() *namespacesModel {
-	clientset := *pkg.GetKubernetesClientset()
-	namespaces := pkg.GetNamespaces(clientset).Items
+	clientset := *k8s.GetKubernetesClientset()
+	namespaces := k8s.GetNamespaces(clientset).Items
 	return &namespacesModel{items: utils.BuildNamespaceList(namespaces), clientset: clientset, banner: styles.GetBanner(namespaceBanner)}
 }
