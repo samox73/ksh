@@ -99,8 +99,9 @@ func (m PodsModel) View() string {
 
 func buildPodModel(namespace string, parent tea.Model) *PodsModel {
 	clientset := *pkg.GetKubernetesClientset()
+	pods := pkg.GetPods(clientset, namespace).Items
 	m := &PodsModel{
-		items:     utils.BuildPodList(namespace, clientset),
+		items:     utils.BuildPodList(pods),
 		clientset: clientset,
 		namespace: namespace,
 		parent:    parent,

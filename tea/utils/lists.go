@@ -1,17 +1,15 @@
 package utils
 
 import (
-	"log"
 	"sort"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/samox73/ksh/pkg"
 	"github.com/samox73/ksh/tea/components"
 	"github.com/samox73/ksh/tea/styles"
-	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func getList(items []list.Item) list.Model {
+func listFromItems(items []list.Item) list.Model {
 	length := MinInt(len(items)+7, 20)
 	l := list.New(items, components.ItemDelegate{}, 60, length)
 	l.SetShowStatusBar(false)
@@ -23,36 +21,33 @@ func getList(items []list.Item) list.Model {
 	return l
 }
 
-func BuildPodList(namespace string, clientset kubernetes.Clientset) list.Model {
-	items := buildPodItems(namespace, clientset)
-	return getList(items)
+func BuildPodList(pods []corev1.Pod) list.Model {
+	items := buildPodItems(pods)
+	return listFromItems(items)
 }
 
-func BuildNamespaceList(clientset kubernetes.Clientset) list.Model {
-	items := buildNamespaceItems(clientset)
-	return getList(items)
+func BuildNamespaceList(namespaces []corev1.Namespace) list.Model {
+	items := buildNamespaceItems(namespaces)
+	return listFromItems(items)
 }
 
-func buildNamespaceItems(clientset kubernetes.Clientset) []list.Item {
-	items := pkg.GetNamespaces(clientset).Items
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Name < items[j].Name
+func buildNamespaceItems(namespaces []corev1.Namespace) []list.Item {
+	sort.Slice(namespaces, func(i, j int) bool {
+		return namespaces[i].Name < namespaces[j].Name
 	})
-	out := make([]list.Item, len(items))
-	for i, ns := range items {
+	out := make([]list.Item, len(namespaces))
+	for i, ns := range namespaces {
 		out[i] = components.Item{Name: ns.Name}
 	}
 	return out
 }
 
-func buildPodItems(namespace string, clientset kubernetes.Clientset) []list.Item {
-	items := pkg.GetPods(clientset, namespace).Items
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Name < items[j].Name
+func buildPodItems(pods []corev1.Pod) []list.Item {
+	sort.Slice(pods, func(i, j int) bool {
+		return pods[i].Name < pods[j].Name
 	})
-	out := make([]list.Item, len(items))
-	for i, pod := range items {
-		log.Default().Printf("found pod: %s\n", pod.Name)
+	out := make([]list.Item, len(pods))
+	for i, pod := range pods {
 		out[i] = components.Item{Name: pod.Name, Labels: pod.Labels}
 	}
 	return out

@@ -62,5 +62,6 @@ func (m *namespacesModel) View() string {
 
 func BuildNamespaceModel() *namespacesModel {
 	clientset := *pkg.GetKubernetesClientset()
-	return &namespacesModel{items: utils.BuildNamespaceList(clientset), clientset: clientset, banner: styles.GetBanner(namespaceBanner)}
+	namespaces := pkg.GetNamespaces(clientset).Items
+	return &namespacesModel{items: utils.BuildNamespaceList(namespaces), clientset: clientset, banner: styles.GetBanner(namespaceBanner)}
 }
