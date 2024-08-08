@@ -1,4 +1,4 @@
-module ksh
+module github.com/samox73/ksh
 
 go 1.21.6
 
