@@ -38,7 +38,7 @@ func (m *namespacesModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "ctrl+c":
+		case "ctrl+c", "q", "esc":
 			return m, tea.Quit
 		case "enter":
 			i, ok := m.items.SelectedItem().(components.Item)

@@ -41,8 +41,17 @@ func GetBanner(banner string) string {
 			finalBanner.WriteRune('\n')
 		}
 
-		foreground := LogoForegroundStyles[i]
-		background := LogoBackgroundStyles[i]
+		foregroundIdx := i
+		if foregroundIdx >= len(LogoForegroundStyles) {
+			foregroundIdx = len(LogoForegroundStyles) - 1
+		}
+		backgroundIdx := i
+		if backgroundIdx >= len(LogoBackgroundStyles) {
+			backgroundIdx = len(LogoBackgroundStyles) - 1
+		}
+
+		foreground := LogoForegroundStyles[foregroundIdx]
+		background := LogoBackgroundStyles[backgroundIdx]
 
 		for _, c := range s {
 			if c == '█' {
