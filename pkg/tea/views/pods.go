@@ -47,8 +47,10 @@ func (m PodsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case tea.KeyMsg:
 		switch keypress := msg.String(); keypress {
-		case "q":
-			return m.parent, nil
+		case "ctrl+c":
+			return m, tea.Quit
+		case "q", "esc":
+			return m.parent, tea.ClearScreen
 		case "enter":
 			i, ok := m.items.SelectedItem().(components.Item)
 			m.pod = i.Name

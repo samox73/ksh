@@ -18,17 +18,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Try to get the final selection from the container model
 	result, ok := model.(views.ContainersModel)
 	if !ok {
-		fmt.Println("resulting model is invalid")
+		// User quit before completing selection
+		os.Exit(0)
 	}
+
 	namespace := result.GetNamespace()
 	pod := result.GetPod()
 	container := result.GetContainer()
-	if pod != "" && namespace != "" && container != "" {
-		fmt.Printf("Opening shell to %s/%s/%s", namespace, pod, container)
+
+	if namespace != "" && pod != "" && container != "" {
+		fmt.Printf("Opening shell to %s/%s/%s\n", namespace, pod, container)
 		k8s.OpenShell(result.GetClientset(), namespace, pod, container)
 	} else {
-		fmt.Println("invalid values")
+		// Selection incomplete
+		os.Exit(0)
 	}
 }
